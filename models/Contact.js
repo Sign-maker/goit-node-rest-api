@@ -1,4 +1,4 @@
-import { Schema, model, version } from "mongoose";
+import { Schema, model } from "mongoose";
 import { handleSaveError, setUpdateSettings } from "./hooks.js";
 
 const contactSchema = new Schema(
@@ -17,17 +17,17 @@ const contactSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+    },
   },
   { versionKey: false }
 );
 
 contactSchema.post("save", handleSaveError);
 
-contactSchema.pre("findOneAndUpdate", function (next) {
-  this.options.new = true;
-  this.options.runValidators = true;
-  next();
-});
+contactSchema.pre("findOneAndUpdate", setUpdateSettings);
 
 contactSchema.post("findOneAndUpdate", handleSaveError);
 
