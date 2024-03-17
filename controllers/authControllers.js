@@ -12,7 +12,7 @@ const signup = async (req, res) => {
   }
 
   const { email, subscription } = await authServices.signup(req.body);
-  res.status(201).json({ email, subscription });
+  res.status(201).json({ user: { email, subscription } });
 };
 
 const signin = async (req, res) => {
