@@ -8,9 +8,9 @@ const destination = path.resolve("temp");
 const storage = multer.diskStorage({
   destination,
   filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 
-    cb(null, uniqueSuffix + "-" + file.originalname);
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
   },
 });
 
@@ -20,8 +20,16 @@ const limits = {
 
 const fileFilter = function (req, file, cb) {
   const extension = file.originalname.split(".").pop();
+
   if (!ALLOWED_AVATAR_EXTENSIONS.includes(extension)) {
-    return cb(HttpError(400, `${extension} is not valid picture format`));
+    return cb(
+      HttpError(
+        400,
+        `${extension} is not valid picture format, use ${ALLOWED_AVATAR_EXTENSIONS.join(
+          ", "
+        )}`
+      )
+    );
   }
 
   cb(null, true);

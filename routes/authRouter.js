@@ -34,7 +34,6 @@ userRouter.patch(
   "/avatars",
   authenticate,
   upload.single("avatar"),
-  // validateBody(userSchemas.userUpdateSubscriptionSchema),
   authController.updateAvatar
 );
 

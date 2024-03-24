@@ -80,9 +80,13 @@ const updateSubscription = async (req, res) => {
 
 const updateAvatar = async (req, res) => {
   const { _id, email } = req.user;
-  const { height, width } = AVATAR_IMG_SIZES.small;
+
+  if (!req.file) {
+    throw HttpError(400, "No attached file");
+  }
 
   const { path: oldPath, filename } = req.file;
+  const { height, width } = AVATAR_IMG_SIZES.small;
   const newFileName = `${email}-${width}x${height}-${filename}`;
   const newPath = path.join(avatarsPath, newFileName);
 
