@@ -7,8 +7,10 @@ import gravatar from "gravatar";
 import fs from "fs/promises";
 import Jimp from "jimp";
 import { AVATAR_IMG_SIZES } from "../constants/user-constants.js";
+import { sendEmail } from "../helpers/sendEmail.js";
+import { nanoid } from "nanoid";
 
-const { JWT_SECRET } = process.env;
+const { JWT_SECRET, BASE_URL } = process.env;
 const avatarsPath = path.resolve("public", "avatars");
 
 const signup = async (req, res) => {
@@ -19,12 +21,63 @@ const signup = async (req, res) => {
 
   const avatarURL = gravatar.url(req.body.email, { s: 250, d: "mp" });
 
-  const { email, subscription } = await authServices.signup({
+  const { email, subscription, verificationToken } = await authServices.signup({
     ...req.body,
     avatarURL,
+    verificationToken: nanoid(),
   });
 
+  const msg = {
+    to: email,
+    subject: "Verify email",
+    html: `<a href="${BASE_URL}/api/users/verify/${verificationToken}" target="_blank">Click to verify your email</a>`,
+  };
+
+  await sendEmail(msg);
+
   res.status(201).json({ user: { email, subscription } });
+};
+
+const verify = async (req, res) => {
+  const { verificationToken } = req.params;
+
+  const user = await authServices.findUser({ verificationToken });
+  if (!user) {
+    throw HttpError(404, "User not found");
+  }
+
+  await authServices.updateUser(
+    { _id: user._id },
+    { verificationToken: null, verify: true }
+  );
+
+  res.json({
+    message: "Verification successful",
+  });
+};
+
+const resendVerify = async (req, res) => {
+  const { email } = req.body;
+  const user = await authServices.findUser({ email });
+  if (!user) {
+    throw HttpError(404);
+  }
+
+  if (user.verify) {
+    throw HttpError(400, "Verification has already been passed");
+  }
+
+  const msg = {
+    to: email,
+    subject: "Verify email",
+    html: `<a href="${BASE_URL}/api/users/verify/${user.verificationToken}" target="_blank">Click to verify your email</a>`,
+  };
+
+  sendEmail(msg);
+
+  res.json({
+    message: "Verification email sent",
+  });
 };
 
 const signin = async (req, res) => {
@@ -33,6 +86,10 @@ const signin = async (req, res) => {
   const user = await authServices.findUser({ email });
   if (!user) {
     throw HttpError(401, "Email or password is wrong");
+  }
+
+  if (!user.verify) {
+    throw HttpError(401, "Email not verified");
   }
 
   const comparePassword = await authServices.validatePassword(
@@ -109,4 +166,6 @@ export default {
   signout: ctrlWrapper(signout),
   updateSubscription: ctrlWrapper(updateSubscription),
   updateAvatar: ctrlWrapper(updateAvatar),
+  verify: ctrlWrapper(verify),
+  resendVerify: ctrlWrapper(resendVerify),
 };

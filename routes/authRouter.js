@@ -21,6 +21,14 @@ userRouter.post(
 
 userRouter.get("/current", authenticate, authController.getCurrent);
 
+userRouter.get("/verify/:verificationToken", authController.verify);
+
+userRouter.post(
+  "/verify",
+  validateBody(userSchemas.userEmailSchema),
+  authController.resendVerify
+);
+
 userRouter.post("/logout", authenticate, authController.signout);
 
 userRouter.patch(
