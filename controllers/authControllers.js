@@ -48,7 +48,7 @@ const verify = async (req, res) => {
 
   await authServices.updateUser(
     { _id: user._id },
-    { verificationToken: null, verify: true }
+    { verificationToken: " ", verify: true } //в verificationToken устанавливаю " " вместо null из ТЗ, тк null не проходит валидацию в схеме с полем required
   );
 
   res.json({
@@ -96,6 +96,7 @@ const signin = async (req, res) => {
     password,
     user.password
   );
+
   if (!comparePassword) {
     throw HttpError(401, "Email or password is wrong");
   }
